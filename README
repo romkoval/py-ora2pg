@@ -1,4 +1,4 @@
-Oracle to postgresql migration tool
+# Oracle to postgresql migration tool
 
 ~ prepare environment
     # pyvenv3 ve-ora2pg
@@ -22,7 +22,7 @@ Oracle to postgresql migration tool
                  [--cmp-tab-list] [--seq-last-number-fix]
                  pg_uri ora_uri
 
-Ora2Pg copy tables
+# Ora2Pg copy tables
 
 positional arguments:
   pg_uri                PG connect string, pq://...
