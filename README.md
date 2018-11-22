@@ -7,10 +7,16 @@
  * usage
     - example:
     ```
-    python ora2pg.py --replace-query "foo[select * from foo where bar='bar']" "foo2[select * from foo2 where bar='bar']" \
-                     --log-file=/tmp/ora2pg.log -l foo,bar,example \
-                     --use-copy pq://postgresql-connect-string oracle-connect-string
+    python ora2pg.py --replace-query \
+                     "foo[select * from foo where bar='bar']" \
+                     "foo2[select * from foo2 where bar='bar']" \
+                     --use-copy \
+                     -l foo,bar,example \
+                     --log-file=/tmp/ora2pg.log \
+                     pq://postgresql-connect-string oracle-connect-string
      ```
+#### Speedup copying process
+   Use `--processes` and `--use-copy` parameters to speedup copying large amount of data. `Processes` means number of processes to decode data for PG, **not** number of parallel queries.
 
 #### Ora2Pg copy tables - help output
 ```
