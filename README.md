@@ -2,8 +2,8 @@
 
  * prepare environment
     * `# pyvenv3 ve-ora2pg`
-    * `# pip install -r requirements.txt`
     * `# source ve-ora2pg/bin/activate`
+    * `# pip install -r requirements.txt`
  * usage
     - example:
     ```
