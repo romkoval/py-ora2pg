@@ -12,7 +12,7 @@
                      --use-copy pq://postgresql-connect-string oracle-connect-string
      ```
 
-# Ora2Pg copy tables - help output
+#### Ora2Pg copy tables - help output
 ```
 usage: ora2pg.py [-h] [--truncate-tables] [--disable-triggers]
                  [--batch-copy-rowcount BATCH_ROWCOUNT]
