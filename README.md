@@ -1,18 +1,20 @@
 # Oracle to postgresql migration tool
 
-~ prepare environment
-    # pyvenv3 ve-ora2pg
-    # pip install -r requirements.txt
-    # source ve-ora2pg/bin/activate
-~ usage
-    example:
+ * prepare environment
+    * `# pyvenv3 ve-ora2pg`
+    * `# pip install -r requirements.txt`
+    * `# source ve-ora2pg/bin/activate`
+ * usage
+    - example:
+    ```
     python ora2pg.py --replace-query "foo[select * from foo where bar='bar']" "foo2[select * from foo2 where bar='bar']" \
                      --log-file=/tmp/ora2pg.log -l foo,bar,example \
                      --use-copy pq://postgresql-connect-string oracle-connect-string
+     ```
 
-
-
-    usage: ora2pg.py [-h] [--truncate-tables] [--disable-triggers]
+# Ora2Pg copy tables - help output
+```
+usage: ora2pg.py [-h] [--truncate-tables] [--disable-triggers]
                  [--batch-copy-rowcount BATCH_ROWCOUNT]
                  [--table-list TABLES_TO_COPY] [--use-copy]
                  [--log-file LOG_FILE] [--exclude-list EXCLUDE_LIST]
@@ -21,9 +23,6 @@
                  [--force] [--processes PROCESSES] [--fk-drop] [--cmp]
                  [--cmp-tab-list] [--seq-last-number-fix]
                  pg_uri ora_uri
-
-# Ora2Pg copy tables
-
 positional arguments:
   pg_uri                PG connect string, pq://...
   ora_uri               ORA connect string
@@ -59,3 +58,4 @@ optional arguments:
                         and exit
   --seq-last-number-fix
                         Update sequences last numbers and exit
+```
