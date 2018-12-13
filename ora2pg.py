@@ -373,7 +373,8 @@ def parse_arg():
     
     if args.replace_query is not None:
         args.replace_query = replace_query2dict(args.replace_query)
-        print(args.replace_query)
+    else:
+        args.replace_query = {}
 
     return args
 
