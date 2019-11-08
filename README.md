@@ -42,8 +42,6 @@ optional arguments:
   --batch-copy-rowcount BATCH_ROWCOUNT, -b BATCH_ROWCOUNT
                         number of rows to copy at once, default=6000
   --table-list TABLES_TO_COPY, -l TABLES_TO_COPY
-                        coma separate list of tables to copy. Aliases: nsi,
-                        sett, pnrs, arch, tlg, oths, all. Default=pnrs
   --use-copy            use PG COPY command to copy data
   --log-file LOG_FILE   log file, default=ora2pg.log
   --exclude-list EXCLUDE_LIST, -x EXCLUDE_LIST
