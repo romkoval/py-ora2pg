@@ -1,10 +1,10 @@
 # Oracle to postgresql migration tool
-
+![usage demo](https://raw.githubusercontent.com/romkoval/images/master/ora2pg.gif)
  * prepare environment
     * `# pyvenv3 ve-ora2pg`
     * `# source ve-ora2pg/bin/activate`
     * `# pip install -r requirements.txt`
- * usage
+ * usage   
     - example:
     ```
     python ora2pg.py --replace-query \
