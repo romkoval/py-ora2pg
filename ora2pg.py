@@ -338,9 +338,7 @@ def parse_arg():
                         default=6000,
                         help='number of rows to copy at once, default=%(default)s')
     parser.add_argument('--table-list', '-l', dest='tables_to_copy', type=str,
-                        default='pnrs',
-                        help='coma separate list of tables to copy. '
-                             'Aliases: nsi, sett, pnrs, arch, tlg, oths, all. Default=%(default)s')
+                        help='coma separate list of tables to copy.')
     parser.add_argument('--use-copy', dest='use_copy', action='store_true',
                         help='use PG COPY command to copy data')
     parser.add_argument('--log-file', default='ora2pg.log', dest='log_file',
