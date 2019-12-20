@@ -414,8 +414,9 @@ def parse_prog_opts():
     parser.add_argument("-s", "--export-sequences", action="store_true", dest="export_seqs",
                         help="export sequences")
     parser.add_argument("-d", "--destination-dir", dest='dest_dir',
+                        default='schema',
                         help="save tables, indexes and etc in separate files "
-                             "under DEST_DIR/1Tab, DEST_DIR/1Tind, ...")
+                             "under DEST_DIR/1Tab, DEST_DIR/1Tind, ... [default=%(default)s]")
     parser.add_argument("-m", "--sequence-strart-last-number", action="store_true",
                         dest="seq_start_with_lastnum",
                         help="Use sequence last_number for start value")
