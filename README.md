@@ -63,3 +63,33 @@ optional arguments:
   --seq-last-number-fix
                         Update sequences last numbers and exit
 ```
+
+
+#### Create Postgresql DB schema by Oracle schema
+```
+usage: gen_pg_tabs.py [-h] [-l OBJECT_LIST] [-v] [-p] [-f] [-t] [-i] [-s]
+                      [-d DEST_DIR] [-m]
+                      connect_string
+
+positional arguments:
+  connect_string        ORACLE connect string as for SQL Plus
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -l OBJECT_LIST, --object-list OBJECT_LIST
+                        object list to export, comma separate names
+  -v, --verbose
+  -p, --primary-keys    add primary keys directives in to create table
+                        definition
+  -f, --foreign-keys    add foreign keys directives in to create table
+                        definition
+  -t, --export-tables   export tables
+  -i, --export-indexes  export indexes
+  -s, --export-sequences
+                        export sequences
+  -d DEST_DIR, --destination-dir DEST_DIR
+                        save tables, indexes and etc in separate files under
+                        DEST_DIR/1Tab, DEST_DIR/1Tind, ...
+  -m, --sequence-strart-last-number
+
+```
