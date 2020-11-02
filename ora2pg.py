@@ -119,6 +119,36 @@ def clear_pg_data_by_cond(dbpg, tab, cond, timestamp):
     else:
         dbq()
 
+def values_list(cols: [str], bin_cols: [str]) -> [str]:
+    """
+        >>> values_list(['col1', 'col2', 'col3'], ['col1', 'col3'])
+        ['$1::bytea', '$2', '$3::bytea']
+    """
+    res = []
+    for n, col in enumerate(cols):
+        if col in bin_cols:
+            res.append('$%d::bytea' % (n+1))
+        else:
+            res.append('$%d' % (n+1))
+    return res
+
+def encode_bin(data_rows, cols, bin_cols) -> list:
+    """
+        >>> encode_bin([('1', '2', '4', '\x01'), ('2','2','4','\x04')], ['col1', 'col2', 'col3', 'col4'], ['col4'])
+        [('1', '2', '4', b'\\x01'), ('2', '2', '4', b'\\x04')]
+    """
+    res = []
+    for row in data_rows:
+        res_row = []
+        for n, col in enumerate(cols):
+            if col in bin_cols and row[n]:
+                res_row.append(row[n].encode('cp866'))
+            else:
+                res_row.append(row[n])
+        res.append(tuple(res_row))
+    return res
+
+
 def copy_table(curs, dbpg, tab, args):
     total_rows = 0 if args.skip_count else ora_count_rows(curs, tab, args)
     pbar = tqdm(desc=tab, total=total_rows)
@@ -135,8 +165,9 @@ def copy_table(curs, dbpg, tab, args):
     if args.use_copy:
         pg_query = "copy " + tab + "(" + columns_masked + ") from STDIN"
     else:
+        values = values_list(cols, args.bin_cols)
         pg_query = "insert into " + tab + "(" + columns_masked + ") " + \
-                   "values (" + ','.join(["$%d"%(i+1) for i in range(len(cols))]) + ")"
+                   "values (" + ','.join(values) + ")"
 
     LOGGER.debug(pg_query)
     ins = dbpg.prepare(pg_query)
@@ -147,14 +178,16 @@ def copy_table(curs, dbpg, tab, args):
         if not rows:
             break
         try:
-            ins.load_rows(ora_data2pg_copy(rows, args.pool) if args.use_copy else rows)
+            ins.load_rows(ora_data2pg_copy(rows, args.pool) \
+                if args.use_copy else encode_bin(rows, cols, args.bin_cols))
         except postgresql.exceptions.UniqueError:
             LOGGER.error('UniqueError on batch insert.')
             uniq_error = True
         if uniq_error:
             for row in rows:
                 try:
-                    ins.load_rows(ora_data2pg_copy([row], args.pool) if args.use_copy else [row])
+                    ins.load_rows(ora_data2pg_copy([row], args.pool) \
+                        if args.use_copy else encode_bin([row], cols, args.bin_cols))
                     pbar.update(1)
                 except postgresql.exceptions.UniqueError:
                     LOGGER.error('UniqueError on insert: %s', row)
@@ -272,6 +305,9 @@ def pg_seq_last_number_fix(curs, dbpg):
 
 def main(args):
     """ main """
+    LOGGER.debug('binary cols=%s', args.bin_cols)
+
+
     dbpg = postgresql.open(args.pg_uri)
     dbora = cx_Oracle.connect(args.ora_uri)
 
@@ -339,6 +375,8 @@ def parse_arg():
                         help='number of rows to copy at once, default=%(default)s')
     parser.add_argument('--table-list', '-l', dest='tables_to_copy', type=str,
                         help='coma separate list of tables to copy.')
+    parser.add_argument('--binary-col', dest='bin_cols', action='append',
+                        help='coma separate list of binary columns, use without --use-copy key')
     parser.add_argument('--use-copy', dest='use_copy', action='store_true',
                         help='use PG COPY command to copy data')
     parser.add_argument('--log-file', default='ora2pg.log', dest='log_file',
@@ -346,7 +384,7 @@ def parse_arg():
     parser.add_argument('--exclude-list', '-x', dest='exclude_list', type=str,
                         help='Exclude table list (comma separated). '
                              'Copy all tables in schema excluding this list')
-    parser.add_argument('--skip-count', dest='skip_count', action='store_true', 
+    parser.add_argument('--skip-count', dest='skip_count', action='store_true',
                         help='Do not perform counting rows before copy. Disables progress bar.')
     parser.add_argument('--replace-query', nargs="*", dest='replace_query',
                         help='replase query for table, format: table_name[select * from table_name where cond=some_value]')
@@ -368,12 +406,14 @@ def parse_arg():
     args.tables_to_copy = tabs2list(args.tables_to_copy)
     if args.exclude_list is not None:
         args.exclude_list = tabs2list(args.exclude_list)
-    
+
     if args.replace_query is not None:
         args.replace_query = replace_query2dict(args.replace_query)
     else:
         args.replace_query = {}
 
+    if args.bin_cols is None:
+        args.bin_cols = []
     return args
 
 def backup_logfile_name(filename):
