@@ -103,9 +103,9 @@ def dump_table_indexes(cur, opts, table):
             dump_to_file(opts, dest_dir, '1Tind', table + '.' + idx, idx_text)
     return indexes_str
 
-def get_primary_key_ddl(cur, table):
+def get_primary_key_dict(cur, table):
     """information about primary key columns"""
-    contr_qry = """SELECT ucc.constraint_name, ucc.column_name
+    contr_qry = """SELECT uc.index_name, ucc.constraint_name, ucc.column_name
 FROM user_constraints uc, user_cons_columns ucc
 WHERE uc.constraint_name = ucc.constraint_name
 AND uc.constraint_type = 'P'
@@ -116,15 +116,30 @@ order by POSITION
     res = select_qry(cur, contr_qry, {"table_name": table})
     pk_columns = []
     constraint_name = None
+    index_name = None
     for row in res:
-        constraint_name = row[0].upper()
-        pk_columns.append(row[1].upper())
+        index_name = row[0].upper()
+        constraint_name = row[1].upper()
+        pk_columns.append(row[2].upper())
 
-    tab_cols = []
-    if pk_columns:
-        tmp_str = 'CONSTRAINT %s PRIMARY KEY (%s)' % (constraint_name, ', '.join(pk_columns))
-        tab_cols.append(tmp_str)
-    return tab_cols
+    if index_name:
+        return {
+            'index_name': index_name,
+            'constraint_name': constraint_name,
+            'pk_columns': pk_columns,
+            'table': table
+        }
+    else:
+        return None
+
+def get_primary_key_ddl(cur, table):
+    """ information about primary key columns """
+    pk = get_primary_key_dict(cur, table)
+
+    if pk:
+        return 'CONSTRAINT %s PRIMARY KEY (%s)' % (pk['constraint_name'], ', '.join(pk['pk_columns']))
+    else:
+        return None
 
 
 def get_foreign_keys_dict(cur, table):
@@ -182,8 +197,17 @@ def dump_foreign_keys(cur, opts, table):
     """ saves constraints """
     fk_columns = get_foreign_key_ddl(cur, table)
     for fkc in fk_columns:
-        ddl = "ALTER TABLE %s ADD %s" % (table, fkc[1])
-        dump_to_file(opts, '2Constr', table + '.' + fkc[0], ddl)
+        ddl = "ALTER TABLE %s ADD %s;" % (table, fkc[1])
+        dump_to_file(opts, opts.dest_dir, '2Constr', table + '.' + fkc[0], ddl)
+
+def dump_primary_keys(cur, opts, table):
+    """ saves pk constraints """
+    pk = get_primary_key_dict(cur, table)
+    if pk:
+        ddl = 'ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY USING INDEX %s;' % (
+            pk['table'], pk['constraint_name'], pk['index_name']
+        )
+        dump_to_file(opts, opts.dest_dir, '2Constr', table + '.' + pk['constraint_name'], ddl)
 
 def map_pg_number(length: str) -> str:
     """ maps PG number types """
@@ -271,8 +295,8 @@ ORDER BY column_name
 
     if add_pk_cols:
         pk_columns = get_primary_key_ddl(cur, table)
-        for pkc in pk_columns:
-            tab_cols.append(pkc)
+        if pk_columns:
+            tab_cols.append(pk_columns)
 
     if add_fk_cols:
         fk_columns = get_foreign_key_ddl(cur, table)
@@ -403,6 +427,8 @@ ORDER BY table_name
 
             if not opts.fkeys_in_tab:
                 dump_foreign_keys(cur, opts, table_name)
+            if not opts.pkeys_in_tab:
+                dump_primary_keys(cur, opts, table_name)
 
 def dump_db_info(cur, stdout, object_list, opts):
     """ dump oracle schema to pg """
