@@ -164,12 +164,14 @@ ORDER BY uc.constraint_name, ucc.position, uic.column_position
     fk = {}
     res = select_qry(cur, foreign_keys_qry, {"table_name": table})
     for row in res:
-        _, cn1, _, tn2, _, cn2, dr, cn = row
+        _, fk_col_name, fk_col_pos, tab_name, ind_col_pos, ind_col_name, delete_rule, fk_name = row
         try:
-            _ = fk[cn][0]
-            _ = fk[cn][2]
+            if len(fk[fk_name][0]) == fk_col_pos - 1:
+                fk[fk_name][0].append(fk_col_name)
+            if len(fk[fk_name][2]) == ind_col_pos - 1:
+                fk[fk_name][2].append(ind_col_name)
         except KeyError:
-            fk[cn] = [[cn1, ], [tn2, ], [cn2, ], [dr, ]]
+            fk[fk_name] = [[fk_col_name, ], [tab_name, ], [ind_col_name, ], [delete_rule, ]]
     return fk
 
 
@@ -180,16 +182,16 @@ def get_foreign_key_ddl(cur, table):
     fkk.sort()
     ret_cols = []
     for cname in fkk:
-        columns1 = fkd[cname][0]
+        fk_columns = fkd[cname][0]
         table2 = fkd[cname][1][0]
-        columns2 = fkd[cname][2]
+        ind_columns = fkd[cname][2]
         on_delete = fkd[cname][3][0]
         if on_delete == 'CASCADE':
             on_delete = 'ON DELETE CASCADE'
         else:
             on_delete = ''
         tmp_str = 'CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s (%s) %s' % \
-                  (cname, ','.join(columns1), table2, ','.join(columns2), on_delete)
+                  (cname, ','.join(fk_columns), table2, ','.join(ind_columns), on_delete)
         ret_cols.append((cname, tmp_str))
     return ret_cols
 
