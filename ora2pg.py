@@ -11,6 +11,14 @@ from tqdm import trange, tqdm
 
 import datetime
 
+########## https://github.com/python-postgres/fe/issues/106 ########
+########## workaround ##############################################
+import postgresql.versionstring as vs
+def parse_debian_compat(vstr, _split=vs.split):
+    return _split(vstr.split()[0])
+vs.split = parse_debian_compat
+########## workaround ##############################################
+
 LOGGER = logging.getLogger(__name__)
 
 def pg_table_fk_list(dbpg, tab):
