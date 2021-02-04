@@ -7,8 +7,8 @@ from collections import namedtuple
 import postgresql # pip install py-postgresql
 import cx_Oracle # pip install cx_Oracle
 from tqdm import trange, tqdm
-from ora2pg import get_ora_user_tabs, backup_logfile_name, tabs2list, desc_table
-from ora2pg import pg_count_rows,reorder_tables, get_update_timestamp_cond
+from ora2pg import get_ora_user_tabs, backup_logfile_name, tabs2list
+from ora2pg import pg_count_rows,reorder_tables, replace_query2dict, get_count_rows_tab_cond
 from ora2pg import mask_col
 
 LOGGER = logging.getLogger(__name__)
@@ -23,34 +23,36 @@ def clear_ora_data_by_cond(curs, tab, cond, timestamp):
         ora_args = {":timestamp1": timestamp[0], ':timestamp2': timestamp[1]}
     curs.execute(query, ora_args)
 
-def copy_table_cond(curs, dbpg, tab, cols, cond, args):
-    cond_pg, cond_ora = cond
-    LOGGER.debug("cond_ora: %s", cond_ora)
+def pg_count_rows(dbpg, tab, args) -> int:
+    """ source table rowcount """
+    replaced_query = get_count_rows_tab_cond(tab, args)
+    query = replaced_query if replaced_query else "select count(*) from " + tab
+    LOGGER.debug("query=%s", query)
+    qcount = dbpg.prepare(query)
+    return qcount()[0]['count']
 
-    columns = ','.join(cols)
-    columns_masked = ','.join(['%s' % mask_col(col) for col in cols])
 
-    if args.clear_tabs:
-        clear_ora_data_by_cond(curs, tab, cond_ora, (args.timestamp_beg, args.timestamp_end))
+def copy_table(curs, dbpg, tab, args):
+    query = "select * from " + tab
+    if tab in args.replace_query:
+        query = args.replace_query[tab]
 
-    pbar = tqdm(desc=tab, total=pg_count_rows(dbpg, tab, cond_pg, \
-                                           (args.timestamp_beg, args.timestamp_end)))
-    query = "select " + columns_masked + " from " + tab + ' ' + cond_pg
+    # if args.clear_tabs:
+    #     clear_ora_data_by_cond(curs, tab, cond_ora, (args.timestamp_beg, args.timestamp_end))
 
-    pg_args = ()
-    if cond_pg:
-        pg_args = (args.timestamp_beg, args.timestamp_end)
-        LOGGER.debug("ora_args:%s", pg_args)
+    pbar = tqdm(desc=tab, total=pg_count_rows(dbpg, tab, args))
 
     LOGGER.debug(query)
     pgq = dbpg.prepare(query)
 
-    ora_query = "insert into " + tab + "(" + columns + ") " + \
+    cols = pgq.column_names
+
+    ora_query = "insert into " + tab + "(" + ','.join(cols) + ") " + \
                 "values (" + ','.join([":%d"%(i+1) for i in range(len(cols))]) + ")"
 
     LOGGER.debug(ora_query)
 
-    for chunk in pgq.chunks(*pg_args):
+    for chunk in pgq.chunks():
         curs.executemany(ora_query, chunk, batcherrors=True)
         for errorObj in curs.getbatcherrors():
             print("Row", errorObj.offset, "has error", errorObj.message)
@@ -61,23 +63,10 @@ def copy_table_cond(curs, dbpg, tab, cols, cond, args):
     curs.execute("commit")
 
 
-def copy_table(curs, dbpg, tab, cols, args):
-    """copy table"""
-    cond_ora = get_update_timestamp_cond(tab, (':timestamp1', ':timestamp2'), oracle=True)
-    cond_pg = get_update_timestamp_cond(tab, ('$1', '$2'), oracle=False)
-
-    for icond in range(len(cond_ora)):
-        condition = (cond_pg[icond], cond_ora[icond])
-        copy_table_cond(curs, dbpg, tab, cols, condition, args)
-
 def copy_tables(curs, dbpg, args):
     """ copy tables """
     for tab in args.tables_to_copy:
-        cols = desc_table(curs, tab)
-        if not cols:
-            LOGGER.error("Can't desc table %s", tab)
-        else:
-            copy_table(curs, dbpg, tab, cols, args)
+        copy_table(curs, dbpg, tab, args)
 
 
 def pg_get_seq_last_value(dbpg, seq_name) -> int:
@@ -184,14 +173,8 @@ def parse_arg():
                         help='clear dest tables before copy')
     parser.add_argument('--disable-triggers', '-t', dest='disable_trigs', action='store_true',
                         help='disable triggers before copy')
-    parser.add_argument('--timestamp-beg', dest='timestamp_beg', type=str,
-                        default='1981-06-17 00:00:00',
-                        help='update (replace) data in tables after this timestamp, '
-                             'default=%(default)s')
-    parser.add_argument('--timestamp-end', dest='timestamp_end', type=str,
-                        default='%s' % (tomorrow),
-                        help='update (replace) data in tables before this timestamp, '
-                             'default=%(default)s')
+    parser.add_argument('--replace-query', nargs="*", dest='replace_query',
+                        help='replase query for table, format: table_name[select * from table_name where cond=some_value]')
     parser.add_argument('--log-file', default='pg2ora.log', dest='log_file',
                         help='log file, default=%(default)s')
     parser.add_argument('--fk-drop', '-f', dest='drop_fk', action='store_true',
@@ -207,13 +190,11 @@ def parse_arg():
     if args.exclude_list is not None:
         args.exclude_list = tabs2list(args.exclude_list)
 
-    try:
-        args.timestamp_beg = datetime.datetime.strptime(args.timestamp_beg, '%Y-%m-%d %H:%M:%S')
-        args.timestamp_end = datetime.datetime.strptime(args.timestamp_end, '%Y-%m-%d %H:%M:%S')
+    if args.replace_query is not None:
+        args.replace_query = replace_query2dict(args.replace_query)
+    else:
+        args.replace_query = {}
 
-    except ValueError as exc:
-        LOGGER.error(exc)
-        exit(-1)
     return args
 
 
