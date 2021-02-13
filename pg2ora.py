@@ -8,6 +8,7 @@ import postgresql # pip install py-postgresql
 import cx_Oracle # pip install cx_Oracle
 from tqdm import trange, tqdm
 from ora2pg import get_ora_user_tabs, backup_logfile_name, tabs2list
+from ora2pg import confirm_truncate_tabs
 from ora2pg import pg_count_rows,reorder_tables, replace_query2dict, get_count_rows_tab_cond
 from ora2pg import mask_col
 
@@ -112,7 +113,9 @@ def ora_disable_fk(cur, tables_list):
     """ disable foreign key check on table list """
     for tab in tables_list:
         for constr in ora_get_constraints(cur, tab):
-            cur.execute("ALTER TABLE " + tab + " DISABLE CONSTRAINT " + constr)
+            q = "ALTER TABLE " + tab + " DISABLE CONSTRAINT " + constr
+            LOGGER.debug(q)
+            cur.execute(q)
 
 def ora_disable_triggers(cur, tables_list):
     """ disable all triggers on table list """
@@ -123,6 +126,18 @@ def ora_enable_triggers(cur, tables_list):
     """ enable all triggers on table list """
     for tab in tables_list:
         cur.execute("ALTER TABLE " + tab + " ENABLE ALL TRIGGERS")
+
+def ora_truncate_tab(cur, tab):
+    """ truncate table """
+    query = "truncate table " + tab + " cascade"
+    LOGGER.debug(query)
+    cur.execute(query)
+
+
+def ora_truncate_tabs(cur, tables_list):
+    """ truncate tables """
+    for tab in reversed(tables_list):
+        ora_truncate_tab(cur, tab)
 
 def main(args):
     """ main """
@@ -145,6 +160,13 @@ def main(args):
         return
     if args.disable_trigs:
         ora_disable_triggers(curs, args.tables_to_copy)
+
+    if args.truncate_tabs:
+        if args.force or confirm_truncate_tabs():
+            ora_truncate_tabs(curs, args.tables_to_copy)
+        else:
+            print('Not confirmed, exiting...')
+            return
 
     args.tables_to_copy = reorder_tables(args.tables_to_copy)
 
@@ -169,8 +191,9 @@ def parse_arg():
                         default='pnrs',
                         help='coma separate list of tables to copy. '
                              'Aliases: nsi, sett, pnrs, arch, tlg, oths, all. Default=%(default)s')
-    parser.add_argument('--clear-tables', '-c', dest='clear_tabs', action='store_true',
-                        help='clear dest tables before copy')
+    parser.add_argument('--truncate-tables', '-z', dest='truncate_tabs', action='store_true',
+                        help='truncate tables before copy')
+    parser.add_argument('--force', dest='force', action='store_true', help="Don't ack, just do")
     parser.add_argument('--disable-triggers', '-t', dest='disable_trigs', action='store_true',
                         help='disable triggers before copy')
     parser.add_argument('--replace-query', nargs="*", dest='replace_query',

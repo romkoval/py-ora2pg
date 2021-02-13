@@ -52,7 +52,7 @@ def pg_disable_triggers_tab(dbpg, tab):
 
 def pg_truncate_tab(dbpg, tab):
     """ truncate dest table """
-    query = "truncate table " + tab + " cascade"
+    query = "truncate table " + tab # + " cascade"
     LOGGER.debug(query)
     dbpg.execute(query)
 
@@ -115,17 +115,6 @@ def ora_data2pg_copy(ora_rows, pool):
         return [escape_row(r) for r in ora_rows]
     else:
         return pool.map(escape_row, ora_rows)
-
-def clear_pg_data_by_cond(dbpg, tab, cond, timestamp):
-    """ clear PG data by cond """
-    query = 'delete from ' + tab + ' ' + cond
-
-    LOGGER.debug(query)
-    dbq = dbpg.prepare(query)
-    if cond:
-        dbq(timestamp[0], timestamp[1])
-    else:
-        dbq()
 
 def values_list(cols: [str], bin_cols: [str]) -> [str]:
     """
@@ -359,7 +348,7 @@ def main(args):
 
 def tabs2list(tabs) -> list:
     "str list to list of str"
-    return tabs.replace(' ', '').replace('\n', '').split(',')
+    return tabs.replace(' ', '').replace('\n', '').upper().split(',')
 
 def replace_query2dict(qlist: list('tab[query]')) -> dict:
     res_dict = dict()
