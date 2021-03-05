@@ -286,15 +286,36 @@ def confirm_truncate_tabs():
         return True
     return False
 
+def pg_get_seq_last_value(dbpg, seq_name) -> int:
+    """ return last number pg seq """
+    last_number = dbpg.prepare("select last_value from " + seq_name)
+    return last_number()[0][0]
+
+
+def pg_get_seqs(dbpg):
+    seq_req = dbpg.prepare("""SELECT relname FROM pg_class WHERE relkind = 'S'""")
+    return [seq[0].upper() for seq in seq_req()]
+
 def pg_seq_last_number_fix(curs, dbpg):
     """ update sequences last numbers: ORA->PG """
+    pg_seqs = pg_get_seqs(dbpg)
+
     seq_qry = """SELECT sequence_name, last_number FROM user_sequences"""
     curs.execute(seq_qry)
     for seq in curs.fetchall():
         seq_name, last_number = seq
-        seq_alter = "alter sequence " + seq_name + " restart with " + str(last_number+1)
+        if seq_name not in pg_seqs:
+            LOGGER.info('sequence %s not found in PG, ignore', seq_name)
+            continue
 
-        LOGGER.debug(seq_alter)
+        pg_last_number = pg_get_seq_last_value(dbpg, seq_name)
+        if pg_last_number > last_number:
+            LOGGER.info('sequence %s has value bigger then Ora [%d > %d], ignore', seq_name, pg_last_number, last_number)
+            continue
+
+        seq_alter = "alter sequence " + seq_name + " restart with " + str(last_number + 1)
+
+        LOGGER.info(seq_alter)
         print(seq_alter)
 
         alter = dbpg.prepare(seq_alter)
@@ -348,7 +369,8 @@ def main(args):
 
 def tabs2list(tabs) -> list:
     "str list to list of str"
-    return tabs.replace(' ', '').replace('\n', '').upper().split(',')
+    if tabs:
+        return tabs.replace(' ', '').replace('\n', '').upper().split(',')
 
 def replace_query2dict(qlist: list('tab[query]')) -> dict:
     res_dict = dict()
