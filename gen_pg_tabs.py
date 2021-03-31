@@ -92,15 +92,10 @@ def dump_table_indexes(cur, opts, table):
         idxs.sort()
         idx_lines = []
         for idx in idxs:
-            dest_dir = opts.dest_dir
-            if table.startswith('ARC_'):
-                if opts.arc_dir:
-                    dest_dir = opts.arc_dir
-                table = opts.arc_tab_prefix + table
             idx_text = 'CREATE%s INDEX %s ON %s (%s);' % \
                         (idx_uniques[idx], idx, table, ', '.join(indexes[idx]))
             idx_lines.append(idx_text)
-            dump_to_file(opts, dest_dir, '1Tind', table + '.' + idx, idx_text)
+            dump_to_file(opts, '1Tind', table + '.' + idx, idx_text)
     return indexes_str
 
 def get_primary_key_dict(cur, table):
@@ -276,7 +271,7 @@ def table_info_row(row):
             {'column_name': column_name, 'data_type': pg_data_type, \
              'nullable': nullable_str, 'default': default_str}
 
-def create_create_table_ddl(cur, table, add_pk_cols, add_fk_cols, arc_tab_prefix):
+def create_create_table_ddl(cur, table, add_pk_cols, add_fk_cols):
     """creates DDL with CREATE TABLE for table"""
     table_cols_qry = """SELECT column_name, data_type, nullable,
 decode(default_length, NULL, 0, 1) hasdef,
@@ -307,10 +302,7 @@ ORDER BY column_name
 
     # creates DDL CREATE TABLE instruction
     #- \n, is required when column has comment
-    table_name = table.upper()
-    if arc_tab_prefix and table_name.startswith('ARC_'):
-        table_name = arc_tab_prefix + table_name
-    create_tab_ddl = 'CREATE TABLE %s (\n    %s\n);' % (table_name, ',\n    '.join(tab_cols))
+    create_tab_ddl = 'CREATE TABLE %s (\n    %s\n);' % (table.upper(), ',\n    '.join(tab_cols))
     return create_tab_ddl
 
 def create_tab_col_comment_ddl(cur, table):
@@ -340,10 +332,10 @@ and COMMENTS is not null"""
 
     return '\n'.join(comments)
 
-def dump_to_file(opts, dest_dir, obj_dir, obj_name, data):
+def dump_to_file(opts, obj_dir, obj_name, data):
     """saves object to file"""
-    ensure_directory(os.path.join(dest_dir, obj_dir))
-    filename = os.path.join(dest_dir, obj_dir, obj_name + '.sql')
+    ensure_directory(os.path.join(opts.dest_dir, obj_dir))
+    filename = os.path.join(opts.dest_dir, obj_dir, obj_name + '.sql')
     if opts.verbose:
         print("\n%s:\n%s" % (filename, data))
     with open(filename, 'w') as file:
@@ -392,7 +384,7 @@ def dump_sequences(cur, object_list, opts):
                            "START WITH %s %s %s;\n" % \
                            (sequence_name, min_value, max_value, increment_by,
                             startswith_number, cache_size, cycle_flag)
-            dump_to_file(opts, opts.dest_dir, '3Seq', sequence_name, sequence_ddl)
+            dump_to_file(opts, '3Seq', sequence_name, sequence_ddl)
 
 
 def dump_tables_indexes(cur, object_list: list, opts: str):
@@ -410,18 +402,11 @@ ORDER BY table_name
         table_name = row[0].upper()
         if object_list is None or table_name in object_list:
             if opts.export_tabs:
-                table_ddl = create_create_table_ddl(cur, table_name, opts.pkeys_in_tab, opts.fkeys_in_tab, opts.arc_tab_prefix)
+                table_ddl = create_create_table_ddl(cur, table_name, opts.pkeys_in_tab, opts.fkeys_in_tab)
                 table_comments_ddl = create_tab_comment_ddl(cur, table_name)
                 table_column_comments_ddl = create_tab_col_comment_ddl(cur, table_name)
 
-                dest_dir = opts.dest_dir
-                table_dir = '1Tab'
-                if table_name.startswith('ARC_'):
-                    table_name = opts.arc_tab_prefix + table_name
-                    if opts.arc_dir:
-                        dest_dir = opts.arc_dir
-                        table_dir = opts.arc_tab_dir
-                dump_to_file(opts, dest_dir, table_dir, table_name,
+                dump_to_file(opts, '1Tab', table_name,
                              '\n'.join((table_ddl, table_comments_ddl, table_column_comments_ddl)))
 
             if opts.export_inds:
@@ -460,14 +445,6 @@ def parse_prog_opts():
                         default='schema',
                         help="save tables, indexes and etc in separate files "
                              "under DEST_DIR/1Tab, DEST_DIR/1Tind, ... [default=%(default)s]")
-    parser.add_argument("-a", "--archive-dir", dest='arc_dir',
-                        help="save arc_* tables, indexes and etc in separate files "
-                             "under ARC_DIR/1Tab, ARC_DIR/1Tind")
-    parser.add_argument("-a1", "--archive-tab-dir", dest='arc_tab_dir',
-                        default='1Tab',
-                        help="folder name for ARC_* tables [default=%(default)s]")
-    parser.add_argument("-a1p", "--archive-tab-prefix", dest='arc_tab_prefix',
-                        help="add name prefix for ARC_* tables")
     parser.add_argument("-m", "--sequence-strart-last-number", action="store_true",
                         dest="seq_start_with_lastnum",
                         help="Use sequence last_number for start value")

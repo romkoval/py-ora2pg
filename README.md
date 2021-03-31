@@ -93,9 +93,3 @@ optional arguments:
   -m, --sequence-strart-last-number
 
 ```
-
-#### Create Sirena Postgresql DB table schema by Oracle (in Sirena dir: 1Tab, 1Tind, ...)
-```
-gen_sirena_pg.sh SIRENA_DIR SIRENA_DB TABLE_NAME
-
-```
