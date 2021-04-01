@@ -195,7 +195,7 @@ def dump_foreign_keys(cur, opts, table):
     fk_columns = get_foreign_key_ddl(cur, table)
     for fkc in fk_columns:
         ddl = "ALTER TABLE %s ADD %s;" % (table, fkc[1])
-        dump_to_file(opts, opts.dest_dir, '2Constr', table + '.' + fkc[0], ddl)
+        dump_to_file(opts, '2Constr', table + '.' + fkc[0], ddl)
 
 def dump_primary_keys(cur, opts, table):
     """ saves pk constraints """
@@ -204,7 +204,7 @@ def dump_primary_keys(cur, opts, table):
         ddl = 'ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY USING INDEX %s;' % (
             pk['table'], pk['constraint_name'], pk['index_name']
         )
-        dump_to_file(opts, opts.dest_dir, '2Constr', table + '.' + pk['constraint_name'], ddl)
+        dump_to_file(opts, '2Constr', table + '.' + pk['constraint_name'], ddl)
 
 def map_pg_number(length: str) -> str:
     """ maps PG number types """
