@@ -6,7 +6,7 @@
     NOTE: No adoptation for packages & triggers
 """
 
-import codecs
+
 import sys
 import os
 import os.path
@@ -20,11 +20,13 @@ def ensure_directory(dname):
     if not os.path.exists(dname):
         os.makedirs(dname)
 
+
 def normalize_fname(fname):
     """replaces to _ strange chars in filename te be created"""
     fname = fname.lower()
     fname = re.compile(r'[^a-z0-9\.\\/]').sub('_', fname)
     return fname
+
 
 def init_db_conn(connect_string):
     """initializes database connection"""
@@ -35,15 +37,18 @@ def init_db_conn(connect_string):
         print(err_str)
         return None
 
+
 def select_qry(cur, querystr, parameters):
     """executes SQL SELECT query"""
     cur.execute(querystr, parameters)
     results = cur.fetchall()
     return results
 
+
 def init_session(cur):
     """initialization of SQL session"""
     cur.execute("ALTER SESSION SET nls_numeric_characters = '.,'")
+
 
 def get_indexes_dict(cur, table, get_pk):
     """ return indexes dict """
@@ -83,6 +88,7 @@ ORDER BY uic.index_name, uic.column_position
 
     return indexes, idx_uniques
 
+
 def dump_table_indexes(cur, opts, table):
     """returm table indices"""
     indexes_str = ''
@@ -97,6 +103,7 @@ def dump_table_indexes(cur, opts, table):
             idx_lines.append(idx_text)
             dump_to_file(opts, '1Tind', table + '.' + idx, idx_text)
     return indexes_str
+
 
 def get_primary_key_dict(cur, table):
     """information about primary key columns"""
@@ -126,6 +133,7 @@ order by POSITION
         }
     else:
         return None
+
 
 def get_primary_key_ddl(cur, table):
     """ information about primary key columns """
@@ -190,12 +198,14 @@ def get_foreign_key_ddl(cur, table):
         ret_cols.append((cname, tmp_str))
     return ret_cols
 
+
 def dump_foreign_keys(cur, opts, table):
     """ saves constraints """
     fk_columns = get_foreign_key_ddl(cur, table)
     for fkc in fk_columns:
         ddl = "ALTER TABLE %s ADD %s;" % (table, fkc[1])
         dump_to_file(opts, '2Constr', table + '.' + fkc[0], ddl)
+
 
 def dump_primary_keys(cur, opts, table):
     """ saves pk constraints """
@@ -206,24 +216,26 @@ def dump_primary_keys(cur, opts, table):
         )
         dump_to_file(opts, '2Constr', table + '.' + pk['constraint_name'], ddl)
 
+
 def map_pg_number(length: str) -> str:
     """ maps PG number types """
     if length == ',' or length == ',0':
         return 'BIGINT'
-    else:
-        __p, __s = length.split(',')
-        if __p and __s and __s != '0':
-            return 'DECIMAL(%s,%s)' % (__p, __s)
-        elif not __s or __s == '0':
-            pint = int(__p)
-            if pint < 5:
-                return 'SMALLINT'
-            elif pint < 10:
-                return 'INTEGER'
-            elif pint < 19:
-                return 'BIGINT'
-            else:
-                return "DECIMAL(%s)" % __p
+
+    __p, __s = length.split(',')
+    if __p and __s and __s != '0':
+        return 'DECIMAL(%s,%s)' % (__p, __s)
+    if not __s or __s == '0':
+        pint = int(__p)
+        if pint < 5:
+            return 'SMALLINT'
+        elif pint < 10:
+            return 'INTEGER'
+        elif pint < 19:
+            return 'BIGINT'
+        else:
+            return "DECIMAL(%s)" % __p
+
 
 def ora2pg_data_type(data_type: str, length: str, char_length: str) -> str:
     """ transforms oracle data_type to PG
@@ -240,11 +252,13 @@ def ora2pg_data_type(data_type: str, length: str, char_length: str) -> str:
     elif data_type == 'CLOB':
         return 'TEXT'
 
+
 def isKeyColname(colname):
     if colname.startswith('_') or colname.upper() in ['END', 'BEGIN']:
         return True
     else:
         return False
+
 
 def table_info_row(row):
     """shows info about table column"""
@@ -268,8 +282,9 @@ def table_info_row(row):
     else:
         column_name = column_name.upper()
     return '%(column_name)s %(data_type)s%(default)s%(nullable)s' % \
-            {'column_name': column_name, 'data_type': pg_data_type, \
-             'nullable': nullable_str, 'default': default_str}
+           {'column_name': column_name, 'data_type': pg_data_type,
+            'nullable': nullable_str, 'default': default_str}
+
 
 def create_create_table_ddl(cur, table, add_pk_cols, add_fk_cols):
     """creates DDL with CREATE TABLE for table"""
@@ -301,9 +316,10 @@ ORDER BY column_name
             tab_cols.append(fkc[1])
 
     # creates DDL CREATE TABLE instruction
-    #- \n, is required when column has comment
+    # \n, is required when column has comment
     create_tab_ddl = 'CREATE TABLE %s (\n    %s\n);' % (table.upper(), ',\n    '.join(tab_cols))
     return create_tab_ddl
+
 
 def create_tab_col_comment_ddl(cur, table):
     """ tab column comments """
@@ -319,6 +335,7 @@ order by column_name"""
 
     return '\n'.join(comments)
 
+
 def create_tab_comment_ddl(cur, table):
     """ table comment """
     tab_comment_qry = """select COMMENTS
@@ -332,6 +349,7 @@ and COMMENTS is not null"""
 
     return '\n'.join(comments)
 
+
 def dump_to_file(opts, obj_dir, obj_name, data):
     """saves object to file"""
     ensure_directory(os.path.join(opts.dest_dir, obj_dir))
@@ -342,6 +360,7 @@ def dump_to_file(opts, obj_dir, obj_name, data):
         file.write(data)
         if data[-1] != '\n':
             file.write('\n')
+
 
 def dump_sequences(cur, object_list, opts):
     """shows database sequences"""
@@ -364,11 +383,10 @@ def dump_sequences(cur, object_list, opts):
             else:
                 max_value = 'MAXVALUE %.0f' % row[2]
             increment_by = '%.0f' % row[3]
-            startswith_number = '%.0f' % (row[4] if opts.seq_start_with_lastnum \
-                                                 else row[1])
+            startswith_number = '%.0f' % (row[4] if opts.seq_start_with_lastnum else row[1])
             cache_size = '%.0f' % row[5]
             cycle_flag = row[6]
-            order_flag = row[7]
+            # order_flag = row[7]
 
             if cache_size and cache_size != '0':
                 cache_size = 'CACHE ' + cache_size
@@ -417,6 +435,7 @@ ORDER BY table_name
             if not opts.pkeys_in_tab:
                 dump_primary_keys(cur, opts, table_name)
 
+
 def dump_db_info(cur, stdout, object_list, opts):
     """ dump oracle schema to pg """
     if opts.export_tabs or opts.export_inds:
@@ -424,6 +443,7 @@ def dump_db_info(cur, stdout, object_list, opts):
 
     if opts.export_seqs:
         dump_sequences(cur, object_list, opts)
+
 
 def parse_prog_opts():
     """ parse input parameters """
@@ -455,8 +475,8 @@ def parse_prog_opts():
     if opts.object_list is not None:
         opts.object_list = [obj.upper() for obj in opts.object_list.split(',')]
 
-    export_all_objects = not (opts.export_inds or \
-                              opts.export_tabs or \
+    export_all_objects = not (opts.export_inds or
+                              opts.export_tabs or
                               opts.export_seqs)
     if export_all_objects:
         opts.export_inds = True
@@ -464,6 +484,7 @@ def parse_prog_opts():
         opts.export_seqs = True
 
     return opts
+
 
 def main():
     """main func"""
@@ -473,11 +494,12 @@ def main():
     ora_conn = init_db_conn(opts.connect_string)
     if not ora_conn:
         print('unable to connect to DB')
-        return -1
+        return 1
     ora_cur = ora_conn.cursor()
     init_session(ora_cur)
     dump_db_info(ora_cur, stdout, opts.object_list, opts)
     ora_cur.close()
 
+
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
