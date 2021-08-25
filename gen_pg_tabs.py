@@ -251,6 +251,8 @@ def ora2pg_data_type(data_type: str, length: str, char_length: str) -> str:
         return data_type
     elif data_type == 'CLOB':
         return 'TEXT'
+    elif data_type == 'FLOAT':
+        return 'DOUBLE PRECISION'
 
 
 def isKeyColname(colname):
