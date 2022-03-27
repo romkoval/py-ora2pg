@@ -1,0 +1,13 @@
+LICENSE
+README.md
+pyproject.toml
+setup.cfg
+src/ora2pg/__init__.py
+src/ora2pg/gen_pg_tabs.py
+src/ora2pg/ora2pg.py
+src/ora2pg/pg2ora.py
+src/py_ora2pg.egg-info/PKG-INFO
+src/py_ora2pg.egg-info/SOURCES.txt
+src/py_ora2pg.egg-info/dependency_links.txt
+src/py_ora2pg.egg-info/entry_points.txt
+src/py_ora2pg.egg-info/top_level.txt

@@ -134,8 +134,17 @@ def ora_truncate_tabs(cur, tables_list):
     for tab in reversed(tables_list):
         ora_truncate_tab(cur, tab)
 
-def main(args):
+def main():
     """ main """
+
+    LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
+                  '-35s %(lineno) -5d: %(message)s')
+    args = parse_arg()
+    rotate_logfile(args.log_file)
+    logging.basicConfig(level=logging.DEBUG,
+                        format=LOG_FORMAT, filename=args.log_file)
+    LOGGER.info(' '.join(sys.argv))
+
     dbpg = postgresql.open(args.pg_uri)
     dbora = cx_Oracle.connect(args.ora_uri)
 
@@ -224,10 +233,4 @@ def rotate_logfile(filename):
         os.rename(filename, backup_logfile_name(filename))
 
 if __name__ == '__main__':
-    LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
-                  '-35s %(lineno) -5d: %(message)s')
-    args = parse_arg()
-    rotate_logfile(args.log_file)
-    logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, filename=args.log_file)
-    LOGGER.info(' '.join(sys.argv))
-    main(args)
+    main()

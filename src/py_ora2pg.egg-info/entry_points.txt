@@ -1,0 +1,5 @@
+[console_scripts]
+gen_pg_tabs = gen_pg_tabs:gen_pg_tabs.main
+ora2pg = ora2pg:ora2pg.main
+pg2ora = pg2ora:pg2ora.main
+

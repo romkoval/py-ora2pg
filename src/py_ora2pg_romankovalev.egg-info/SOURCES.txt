@@ -1,0 +1,8 @@
+LICENSE
+README.md
+pyproject.toml
+setup.cfg
+src/py_ora2pg_romankovalev.egg-info/PKG-INFO
+src/py_ora2pg_romankovalev.egg-info/SOURCES.txt
+src/py_ora2pg_romankovalev.egg-info/dependency_links.txt
+src/py_ora2pg_romankovalev.egg-info/top_level.txt

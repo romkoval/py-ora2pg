@@ -116,7 +116,7 @@ def ora_data2pg_copy(ora_rows, pool):
     else:
         return pool.map(escape_row, ora_rows)
 
-def values_list(cols: [str], bin_cols: [str]) -> [str]:
+def values_list(cols: list[str], bin_cols: list[str]) -> list[str]:
     """
         >>> values_list(['col1', 'col2', 'col3'], ['col1', 'col3'])
         ['$1::bytea', '$2', '$3::bytea']
@@ -321,8 +321,15 @@ def pg_seq_last_number_fix(curs, dbpg):
         alter = dbpg.prepare(seq_alter)
         alter()
 
-def main(args):
+def main():
     """ main """
+    LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
+                  '-35s %(lineno) -5d: %(message)s')
+    args = parse_arg()
+    rotate_logfile(args.log_file)
+    logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, filename=args.log_file)
+    LOGGER.info(' '.join(sys.argv))
+
     LOGGER.debug('binary cols=%s', args.bin_cols)
 
 
@@ -452,10 +459,4 @@ def rotate_logfile(filename):
         os.rename(filename, backup_logfile_name(filename))
 
 if __name__ == '__main__':
-    LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
-                  '-35s %(lineno) -5d: %(message)s')
-    args = parse_arg()
-    rotate_logfile(args.log_file)
-    logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, filename=args.log_file)
-    LOGGER.info(' '.join(sys.argv))
-    main(args)
+    main()

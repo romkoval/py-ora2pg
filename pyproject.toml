@@ -1,5 +1,6 @@
 [build-system]
 requires = [
+	"setuptools==49.2.1",
 	"cx-Oracle==7.0.0",
 	"py-postgresql==1.2.1",
 	"tqdm==4.28.1"]
