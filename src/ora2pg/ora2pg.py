@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf8 -*-import logging
+
 import sys
 import logging.handlers
 from collections import namedtuple
@@ -116,7 +117,7 @@ def ora_data2pg_copy(ora_rows, pool):
     else:
         return pool.map(escape_row, ora_rows)
 
-def values_list(cols: list[str], bin_cols: list[str]) -> list[str]:
+def values_list(cols: [str], bin_cols: [str]) -> [str]:
     """
         >>> values_list(['col1', 'col2', 'col3'], ['col1', 'col3'])
         ['$1::bytea', '$2', '$3::bytea']

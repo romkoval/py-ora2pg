@@ -1,17 +1,18 @@
+#!/usr/bin/env python3
+# -*- coding: utf8 -*-import logging
 import logging
 import logging.handlers
 import datetime
 import sys
 import argparse
-from collections import namedtuple
 import postgresql # pip install py-postgresql
 import cx_Oracle # pip install cx_Oracle
 from tqdm import trange, tqdm
 
-from ora2pg import get_ora_user_tabs, backup_logfile_name, tabs2list
-from ora2pg import confirm_truncate_tabs
-from ora2pg import pg_count_rows,reorder_tables, replace_query2dict, get_count_rows_tab_cond
-from ora2pg import mask_col, pg_get_seq_last_value
+from ora2pg.ora2pg import get_ora_user_tabs, backup_logfile_name, tabs2list
+from ora2pg.ora2pg import confirm_truncate_tabs
+from ora2pg.ora2pg import pg_count_rows,reorder_tables, replace_query2dict, get_count_rows_tab_cond
+from ora2pg.ora2pg import mask_col, pg_get_seq_last_value
 
 LOGGER = logging.getLogger(__name__)
 

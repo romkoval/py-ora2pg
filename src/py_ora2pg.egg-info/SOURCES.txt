@@ -10,4 +10,5 @@ src/py_ora2pg.egg-info/PKG-INFO
 src/py_ora2pg.egg-info/SOURCES.txt
 src/py_ora2pg.egg-info/dependency_links.txt
 src/py_ora2pg.egg-info/entry_points.txt
+src/py_ora2pg.egg-info/requires.txt
 src/py_ora2pg.egg-info/top_level.txt
