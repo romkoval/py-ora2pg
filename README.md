@@ -1,13 +1,16 @@
 # Oracle to postgresql migration tool
 ![usage demo](https://raw.githubusercontent.com/romkoval/images/master/ora2pg.gif)
- * prepare environment
+ * prepare environment (optional step)
     * `# pyvenv3 ve-ora2pg`
     * `# source ve-ora2pg/bin/activate`
     * `# pip install -r requirements.txt`
+
+ * install package
+    * `# pip install ora2pg`
  * usage   
     - example:
     ```
-    python ora2pg.py --replace-query \
+    ora2pg --replace-query \
                      "foo[select * from foo where bar='bar']" \
                      "foo2[select * from foo2 where bar='bar']" \
                      --use-copy \
@@ -20,7 +23,7 @@
 
 #### Ora2Pg copy tables - help output
 ```
-usage: ora2pg.py [-h] [--truncate-tables] [--disable-triggers]
+ora2pg [-h] [--truncate-tables] [--disable-triggers]
                  [--batch-copy-rowcount BATCH_ROWCOUNT]
                  [--table-list TABLES_TO_COPY] [--use-copy]
                  [--log-file LOG_FILE] [--exclude-list EXCLUDE_LIST]
@@ -67,7 +70,7 @@ optional arguments:
 
 #### Create Postgresql DB schema by Oracle schema
 ```
-usage: gen_pg_tabs.py [-h] [-l OBJECT_LIST] [-v] [-p] [-f] [-t] [-i] [-s]
+usage: gen_pg_tabs [-h] [-l OBJECT_LIST] [-v] [-p] [-f] [-t] [-i] [-s]
                       [-d DEST_DIR] [-m]
                       connect_string
 
